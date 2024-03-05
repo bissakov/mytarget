@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from enum import Enum
 from typing import ContextManager, Dict, List, Union
 
+import pandas as pd
 import requests
 
 from src.notification import send_message
@@ -139,8 +140,11 @@ def download_statistics(access_token: str, statistics_file: str, date_range: Dat
                    (v1.items() if isinstance(v1, dict) else [(k1, v1)])}
             } for row in rows]
 
-            with open(formatted_statistics_file, 'w', encoding='utf-8') as file:
-                json.dump(statistics, file, ensure_ascii=False, indent=2)
+            df = pd.DataFrame(statistics)
+            if 'base_vk' in df.columns:
+                df.drop(columns=['base_vk'], inplace=True)
+
+            df.to_json(formatted_statistics_file, orient='records', index=False, force_ascii=False, indent=2)
 
             log_messages.append(f'{campaign_id}_{ad_group_id}_{banner_id}: statistics saved...')
             logger.info(f'Report {formatted_statistics_file} saved...')
